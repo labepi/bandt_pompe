@@ -1,4 +1,23 @@
-# script to compute the maximum and minimum limits for the CCEP
+# Script to compute the maximum and minimum limits for the CCEP
+
+# The limits will be saved in the appropriate file at "limits/"
+# directory, for each D.
+# The format of the files are
+# 
+# "limits/limits_N"D!".dat"
+#
+# For example:
+#
+# limits/limits_N6.dat
+# limits/limits_N24.dat
+# ...
+#
+# Each file has 3 columns:
+#   "H" "SC" "Z"
+# corresponding to the Normalized Shannon Entropy (H), the Statistical
+# Complexity (SC), for the x-axis and y-axis of the plot, and a third Z
+# columnd indicating whether the point correspond to the min limit (1)
+# or max limit (2).
 
 source('bandt_pompe.R')
 source('measures.R')
@@ -6,13 +25,15 @@ source('helpers.R')
 
 bp_path = './'
 
-D=7
+# the embedding dimension
+D=3
+
+# difining the limits for computing the min and maximum limits
 lenmin=5000
 lenmax=1000
 
 # size of probability space
 N = factorial(D)
-#N = factorial(D)^2
 
 # matrix of barycenters (sub-simplex)
 b = matrix(0, ncol=N, nrow=N)
@@ -25,7 +46,6 @@ for(i in 1:N)
 }
 
 # TODO: evaluate in the intervals between barycenters
-
 
 # C_min
 
@@ -76,9 +96,6 @@ for(i in 1:(N-1))
                    )
     }
 }
-
-# adjusting the order of C_max limits
-#d2 = d2[nrow(d2):1,]
 
 # concatenating the min and max curves to save
 # NOTE: adding a third column indicating whether the point 

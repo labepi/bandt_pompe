@@ -11,3 +11,10 @@ limits/limits_N6.dat
 limits/limits_N24.dat
 ...
 
+Each file has 3 columns:
+  "H" "SC" "Z"
+corresponding to the Normalized Shannon Entropy (H), the Statistical
+Complexity (SC), for the x-axis and y-axis of the plot, and a third Z
+columnd indicating whether the point correspond to the min limit (1)
+or max limit (2).
+
