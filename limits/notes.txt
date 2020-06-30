@@ -1,0 +1,13 @@
+
+The computed limits, for each D, with the limits.R script will be saved here.
+
+The format of the files are
+
+"limits/limits_N"D!".dat"
+
+For example:
+
+limits/limits_N6.dat
+limits/limits_N24.dat
+...
+
