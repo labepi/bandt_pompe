@@ -1,8 +1,8 @@
-suppressMessages(library(igraph))
-require(e1071, quietly=TRUE)
-suppressMessages(library(entropy))
+
 
 # Implementation of the Bandt-Pompe transformations
+
+source('includes.R')
 
 ###################
 # regular functions
