@@ -10,6 +10,17 @@ require(e1071, quietly=TRUE)
 
 suppressMessages(library(entropy))
 
+library(Rcpp)
+
+
+if (!exists('bandt_pompe_path'))
+{
+    bandt_pompe_path = '.'
+}
+
+# Rcpp implementation of bandt-pompe functions
+sourceCpp(paste(bandt_pompe_path,'bandt_pompe.cpp', sep='/'))
+
 
 ###################
 # regular functions
@@ -126,7 +137,10 @@ bandt_pompe_distribution = function(data, D=4, tau=1, numred=FALSE, by=1,
     else
     {
         # the list of symbols from the BP transformation
-        symbols = bandt_pompe(data, D=D, tau=tau, by=by, equal=equal)
+        #symbols = bandt_pompe(data, D=D, tau=tau, by=by, equal=equal)
+
+        # NOTE: changing the main bandt-pompe function to its cpp version
+        symbols = bandt_pompe_c(data, D=D, tau=tau)
     }
 
     # the distribution of permutations (pi)

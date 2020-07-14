@@ -51,7 +51,9 @@ bandt_pompe_transition = function(data, D=4, tau=1,
     else
     {
         # the list of symbols from the BP transformation
-        symbols = bandt_pompe(data, D=D, tau=tau, by=by, equal=equal, amplitude=amplitude)
+        #symbols = bandt_pompe(data, D=D, tau=tau, by=by, equal=equal, amplitude=amplitude)
+        # NOTE: changing the main bandt-pompe function to its cpp version
+        symbols = bandt_pompe_c(data, D=D, tau=tau)
     }
 
     # consider the amplitude as the weights
