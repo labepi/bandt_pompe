@@ -131,3 +131,18 @@ checkParameters = function(m, D, tau, lim=1)
     return(FALSE)
 }
 
+
+
+# checking the maximum possible value for tau
+# - m is the length of the series
+# - D is the embedding dimension
+# - lim is the minimum number of patterns allowed
+#
+# - the maximum possible value for tau, for having at least one pattern,
+#   must satisfy the condition:
+#       tau < m / (D-1)
+checkMaxTau = function(m, D, lim=1)
+{
+    return(ceiling((m-(lim-1))/(D-1)-1))
+}
+
