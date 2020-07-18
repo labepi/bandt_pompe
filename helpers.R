@@ -55,7 +55,7 @@ plot.ccep = function(H=NULL, SC=NULL, D=4, main='', N=NULL,
     }
     
     # limits
-    d = read.table(paste(bp_path, 'limits/limits_N',N,'.dat', sep=''), header=T)
+    d = read.table(paste(bandt_pompe_path, 'limits/limits_N',N,'.dat', sep=''), header=T)
 
     if (add==FALSE)
     {
@@ -92,7 +92,7 @@ gplot.ccep = function(H=NULL, SC=NULL, D=4, main='', N=NULL,
     }
     
     # limits
-    d = read.table(paste(bp_path, 'limits/limits_N',N,'.dat', sep=''), header=T)
+    d = read.table(paste(bandt_pompe_path, 'limits/limits_N',N,'.dat', sep=''), header=T)
     d.df = as.data.frame(d)
 
     p = ggplot() +
