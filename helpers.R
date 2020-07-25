@@ -83,7 +83,7 @@ plot.ccep = function(H=NULL, SC=NULL, D=4, main='', N=NULL,
 # - the points may be informed (H,SC), or empty to plot just the limits
 # NOTE: it returns the ggplot object p
 gplot.ccep = function(H=NULL, SC=NULL, D=4, main='', N=NULL,
-                   xlim=c(0,1), ylim=c(0,1), lwd=1, col=1, shp=1)
+                   xlim=c(0,1), ylim=c(0,1), lwd=1, col=1, shp=1, add=FALSE)
 {
     # added an option to first check by the N
     if (is.null(N))
@@ -95,19 +95,26 @@ gplot.ccep = function(H=NULL, SC=NULL, D=4, main='', N=NULL,
     d = read.table(paste(bandt_pompe_path, '/limits/limits_N',N,'.dat', sep=''), header=T)
     d.df = as.data.frame(d)
 
-    p = ggplot() +
-        #geom_line(aes(H, SC), data=d.df) +
-        geom_path(aes(H, SC), data=d.df) +
-        labs(x="Normalized Shannon Entropy (H)",
-             y="Statistical Complexity (C)",
-             title=main) +
-        coord_cartesian(xlim=xlim, ylim=ylim) +
-        theme_bw()
-
-    if ( !is.null(H) & !is.null(SC) )
+    if (add == FALSE)
     {
-        H_SC = data.frame(x=H, y=SC)
-        p = p + geom_point(aes(x, y), data=H_SC, color=col, shape=shp)
+        p = ggplot() +
+            #geom_line(aes(H, SC), data=d.df) +
+            geom_path(aes(H, SC), data=d.df) +
+            labs(x="Normalized Shannon Entropy (H)",
+                 y="Statistical Complexity (C)",
+                 title=main) +
+            coord_cartesian(xlim=xlim, ylim=ylim) +
+            theme_bw()
+
+        if ( !is.null(H) & !is.null(SC) )
+        {
+            H_SC = data.frame(x=H, y=SC)
+            p = p + geom_point(aes(x, y), data=H_SC, color=col, shape=shp)
+        }
+    }
+    else
+    {
+        p = geom_path(aes(H, SC), data=d.df)
     }
 
     return(p)
