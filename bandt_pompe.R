@@ -132,6 +132,48 @@ bandt_pompe_distribution = function(data, D=4, tau=1, numred=FALSE, by=1,
     if (useSymbols == TRUE)
     {
         # symbols were passed as data
+        #symbols = data
+
+        # counting the patterns in Rcpp
+        perms = bandt_pompe_distribution_symbols_c(data, D, tau)
+    }
+    else
+    {
+        # the list of symbols from the BP transformation
+        # NOTE: changing the main bandt-pompe function to its cpp version
+        #symbols = bandt_pompe_c(data, D=D, tau=tau)
+        perms = bandt_pompe_distribution_c(data, D, tau)
+    }
+
+
+    # the names for the permutations
+    perms_n = names(perms)
+    
+    # the returning format
+    output = data.frame(patterns = perms_n, 
+                        frequencies = perms,
+                        probabilities = perms/sum(perms))
+    return(output)
+}
+
+
+# Bandt-Pompe distribution
+#
+# Parameters:
+# data: the time series (univariate vector) or the pre-computed symbols
+# D:    the embedding dimension (size of sliding window)
+# tau:  the embedding delay ('step' value)
+# numred: numerosity reduction, similar to BOSS algorithm, do not count
+#         repetitions of the same symbol
+# equal - if TRUE, it will compute equal sequences separately
+# useSymbols - if TRUE, the symbols were already computed, and passed as 'data'
+bandt_pompe_distribution2 = function(data, D=4, tau=1, numred=FALSE, by=1, 
+                                    equal=FALSE, useSymbols=FALSE)
+{
+    # check if the symbols were already computed
+    if (useSymbols == TRUE)
+    {
+        # symbols were passed as data
         symbols = data
     }
     else
@@ -144,7 +186,7 @@ bandt_pompe_distribution = function(data, D=4, tau=1, numred=FALSE, by=1,
     }
 
     # the distribution of permutations (pi)
-    dpi = rep(0, factorial(D))
+    #dpi = rep(0, factorial(D))
     
     # to get the index of the permutation pi
     perms = bandt_pompe_empty(D, equal=equal)
@@ -183,6 +225,5 @@ bandt_pompe_distribution = function(data, D=4, tau=1, numred=FALSE, by=1,
                         probabilities = perms/sum(perms))
     return(output)
 }
-
 
 

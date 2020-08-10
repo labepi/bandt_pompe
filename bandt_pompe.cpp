@@ -1,4 +1,7 @@
 #include <Rcpp.h>
+#include <iostream>
+#include <algorithm>
+#include <map>
 using namespace Rcpp;
 
 //' Ordering Permutation
@@ -62,6 +65,7 @@ NumericVector orderc(NumericVector x)
 }
 
 //' Compute a single pattern
+//'
 //' @param w The sliding window to be permutted
 //' @return Returns the permutation pattern as a string
 //
@@ -81,7 +85,12 @@ String bandt_pompe_pattern_c(NumericVector x)
     return res;
 }
 
-// TODO: needs to return a string vector of symbols
+//' Bandt-Pompe transformation
+//'
+//' @param x The time series (univariate vector)
+//' @param D The embedding dimension (size of sliding window)
+//' @param tau The embedding delay ('step' value)
+//
 // [[Rcpp::export]]
 StringVector bandt_pompe_c(NumericVector x, int D=3, int tau=1)
 {
@@ -123,4 +132,87 @@ StringVector bandt_pompe_c(NumericVector x, int D=3, int tau=1)
 
     return symbols;
 }
+
+// Returns an empty list of symbols
+// 
+// The list is a map, to counting the patterns
+//
+// @param D The embedding dimension
+// 
+// [[Rcpp::export]]
+std::map<std::string, int> bandt_pompe_empty_c(int D=3)
+{
+    std::map<std::string, int> perms;
+
+    int i, itens[D];
+
+    // initializing the list of itens
+    for(i = 0; i < D; i++)
+    {
+        itens[i] = i+1;
+    }
+
+    String s;
+    
+    // create each permutation and initialize it with 0
+    do {
+        s = "";
+        for(i = 0; i < D; i++)
+        {
+            s += std::to_string(itens[i]);
+        }
+        perms[s] = 0;
+    } while ( std::next_permutation(itens,itens+D) );
+
+    return perms;
+}
+
+//' Bandt-Pompe distribution
+//'
+//' @param x The time series (univariate vector)
+//' @param D The embedding dimension (size of sliding window)
+//' @param tau The embedding delay ('step' value)
+// 
+// [[Rcpp::export]]
+std::map<std::string, int> bandt_pompe_distribution_c(NumericVector x, int D=3, int tau=1)
+{
+    // create the empty permutations
+    std::map<std::string, int> perms = bandt_pompe_empty_c(D);
+    
+    // computing the symbols
+    StringVector symbols = bandt_pompe_c(x, D, tau);
+
+    // counting the patterns 
+    for(int i = 0; i < symbols.size(); i++)
+    {
+        ++perms[(String)symbols[i]];
+    }
+
+    return perms;
+}
+
+
+//' Bandt-Pompe distribution (symbols)
+//'
+//' @param symbols The symbols already computed
+//' @param D The embedding dimension (size of sliding window)
+//' @param tau The embedding delay ('step' value)
+// 
+// [[Rcpp::export]]
+std::map<std::string, int> bandt_pompe_distribution_symbols_c(StringVector symbols, int D=3, int tau=1)
+{
+    // create the empty permutations
+    std::map<std::string, int> perms = bandt_pompe_empty_c(D);
+    
+    // symbols already computed
+
+    // counting the patterns 
+    for(int i = 0; i < symbols.size(); i++)
+    {
+        ++perms[(String)symbols[i]];
+    }
+
+    return perms;
+}
+
 
