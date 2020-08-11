@@ -1,3 +1,13 @@
+#library(Rcpp)
+#
+#if (!exists('bandt_pompe_path'))
+#{
+#    bandt_pompe_path = '.'
+#}
+#
+## Rcpp implementation of bandt-pompe functions
+#sourceCpp(paste(bandt_pompe_path,'bandt_pompe_graph.cpp', sep='/'))
+
 ############################
 # transition graph functions
 ############################
@@ -19,6 +29,102 @@
 # amplitude: if TRUE, it computes the amplitude of each sliding window
 #           (largest difference between elements)
 bandt_pompe_transition = function(data, D=4, tau=1, 
+                                  normalized=TRUE, markov=FALSE,
+                                  loop=TRUE, vect=FALSE, by=1,
+                                  sthocastic=FALSE, 
+                                  equal=FALSE, useSymbols=FALSE,
+                                  amplitude=FALSE)
+{
+    # the number of permutations
+    #dfact = factorial(D)
+
+    # plus 000 pattern
+    if(equal==TRUE)
+    {
+        dfact = dfact+1
+    }
+
+    # to get the index of the permutation pi
+    perms_n = names(bandt_pompe_empty(D, equal=equal))
+    
+    # check if the symbols were already computed
+    if (useSymbols == TRUE)
+    {
+        # symbols were passed as data
+        # counting transitions in Rcpp
+        M = bandt_pompe_transition_symbols_c(data, D, tau)
+    }
+    else
+    {
+        # computing symbols and counting transitions in Rcpp
+        M = bandt_pompe_transition_c(data, D, tau)
+    }
+
+    # to convert the list of lists to matrix, via data.frame
+    M = as.matrix(as.data.frame(M))
+
+    # consider the amplitude as the weights
+    if (amplitude == TRUE)
+    {
+        amps = attr(bp, 'amplitude')
+        
+        # NOTE: for the case of a constant series, it is not possible to
+        # compute amplitudes
+        if (sd(amps) == 0)
+        {
+            amplitude = FALSE
+        }
+    }
+
+    if (normalized == TRUE)
+    {
+        # similar to a markov chain probabilities
+        if (markov == TRUE)
+        {
+            # normalization by columns: stochastic matrix
+            M = scale(M, center=FALSE, scale=colSums(M))
+            if (sthocastic==FALSE)
+            {
+                M = t(M)
+            }
+            M[is.nan(M)] = 0 # for the 0 columns
+        }
+        else
+        {
+            # doing a general normalization
+            M = M/sum(M)
+        }
+    }
+
+    if (vect == TRUE)
+    {
+        M = c(M)
+    }
+    
+    # labeling the patterns
+    rownames(M) = perms_n
+    colnames(M) = perms_n
+    
+    return(M)
+}
+
+
+# The Band-Pompe Transition (adjacency matrix)
+#
+# Parameters:
+# data: the time series (univariate vector) or the pre-computed symbols
+# D:    the embedding dimension (size of sliding window)
+# tau:  the embedding delay ('step' value)
+# normalized: returns as percentage
+# markov: normalization as a stochastic matrix
+# loop: enable (TRUE) the creation of loopings in the graph
+# vect: returns as a vector instead of matrix
+# sthocastic: if TRUE, it will create a sthocastic matrix (cols sum up to 1)
+# equal: if TRUE, it will compute equal sequences separately
+# useSymbols - if True, the symbols were already computed, and passed as 'data'
+# amplitude: if TRUE, it computes the amplitude of each sliding window
+#           (largest difference between elements)
+bandt_pompe_transition2 = function(data, D=4, tau=1, 
                                   normalized=TRUE, markov=FALSE,
                                   loop=TRUE, vect=FALSE, by=1,
                                   sthocastic=FALSE, 
