@@ -4,6 +4,10 @@
 #include <map>
 using namespace Rcpp;
 
+#include <chrono> 
+using namespace std;
+using namespace std::chrono; 
+
 //' Ordering Permutation
 //' This function is a replacement to the R's order() function, but only
 //'  works for the ascending order.
@@ -154,6 +158,8 @@ std::map<std::string, int> bandt_pompe_empty_c(int D=3)
 
     String s;
     
+    //auto start = high_resolution_clock::now(); 
+    
     // create each permutation and initialize it with 0
     do {
         s = "";
@@ -163,6 +169,10 @@ std::map<std::string, int> bandt_pompe_empty_c(int D=3)
         }
         perms[s] = 0;
     } while ( std::next_permutation(itens,itens+D) );
+
+    //auto stop = high_resolution_clock::now(); 
+    //auto duration = duration_cast<microseconds>(stop - start); 
+    //Rcout << "\t\tTIME EMPTY: " << duration.count() << " seconds" << endl;
 
     return perms;
 }
@@ -242,6 +252,8 @@ std::map<std::string, std::map<std::string, int>> bandt_pompe_empty_matrix_c(int
 
     String s;
     
+    //auto start = high_resolution_clock::now(); 
+    
     // create each permutation and initialize it with 0
     do {
         s = "";
@@ -251,6 +263,10 @@ std::map<std::string, std::map<std::string, int>> bandt_pompe_empty_matrix_c(int
         }
         M[s] = bandt_pompe_empty_c(D);
     } while ( std::next_permutation(itens,itens+D) );
+    
+    //auto stop = high_resolution_clock::now(); 
+    //auto duration = duration_cast<microseconds>(stop - start); 
+    //Rcout << "\t\tTIME EMPTY MATRIX: " << duration.count() << " seconds" << endl;
 
     return M;
 }
@@ -267,7 +283,9 @@ std::map<std::string, std::map<std::string, int>>
 bandt_pompe_transition_c(NumericVector x, int D=3, int tau=1)
 {
     // the transition matrix
-    std::map<std::string, std::map<std::string, int>> M = bandt_pompe_empty_matrix_c(D);
+    // NOTE: the matrix initialization as removed, and this adjustment is made in R
+    //std::map<std::string, std::map<std::string, int>> M = bandt_pompe_empty_matrix_c(D);
+    std::map<std::string, std::map<std::string, int>> M;
 
     // computing the symbols
     StringVector symbols = bandt_pompe_c(x, D, tau);
@@ -292,14 +310,28 @@ bandt_pompe_transition_c(NumericVector x, int D=3, int tau=1)
 std::map<std::string, std::map<std::string, int>> 
 bandt_pompe_transition_symbols_c(StringVector symbols, int D=3, int tau=1)
 {
+    //auto start = high_resolution_clock::now(); 
+    
     // the transition matrix
-    std::map<std::string, std::map<std::string, int>> M = bandt_pompe_empty_matrix_c(D);
+    // NOTE: the matrix initialization as removed, and this adjustment is made in R
+    //std::map<std::string, std::map<std::string, int>> M = bandt_pompe_empty_matrix_c(D);
+    std::map<std::string, std::map<std::string, int>> M;
 
+    //auto stop = high_resolution_clock::now(); 
+    //auto duration = duration_cast<microseconds>(stop - start); 
+    //Rcout << "\t\tTIME MAP: " << duration.count() << " seconds" << endl;
+
+    //auto start2 = high_resolution_clock::now(); 
+    //
     // counting the transitions
     for(int i = 1; i < symbols.size(); i++)
     {
         ++M[(String)symbols[i-1]][(String)symbols[i]];
     }
+
+    //auto stop2 = high_resolution_clock::now(); 
+    //auto duration2 = duration_cast<microseconds>(stop2 - start2); 
+    //Rcout << "\t\tTIME LOOP: " << duration2.count() << " seconds" << endl;
 
     return M;
 }

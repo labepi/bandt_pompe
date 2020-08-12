@@ -36,33 +36,61 @@ bandt_pompe_transition = function(data, D=4, tau=1,
                                   amplitude=FALSE)
 {
     # the number of permutations
-    #dfact = factorial(D)
+    dfact = factorial(D)
 
     # plus 000 pattern
     if(equal==TRUE)
     {
         dfact = dfact+1
     }
-
-    # to get the index of the permutation pi
-    perms_n = names(bandt_pompe_empty(D, equal=equal))
     
+    # to get the index of the permutation pi
+    #buildTime = Sys.time()
+    perms_n = names(bandt_pompe_empty(D, equal=equal))
+    #buildTime = difftime(Sys.time(), buildTime, units='sec')
+    #cat('\tTIME PERMS_N:',buildTime,'\n')
+    
+    # the adjacency matrix
+    M = matrix(0, ncol=dfact, nrow=dfact)
+
+    # labeling the patterns
+    rownames(M) = perms_n
+    colnames(M) = perms_n
+
+    # the Rcpp functions return a list of edges (lists)
+
+    #buildTime = Sys.time()
     # check if the symbols were already computed
     if (useSymbols == TRUE)
     {
         # symbols were passed as data
         # counting transitions in Rcpp
-        M = bandt_pompe_transition_symbols_c(data, D, tau)
+        L = bandt_pompe_transition_symbols_c(data, D, tau)
     }
     else
     {
         # computing symbols and counting transitions in Rcpp
-        M = bandt_pompe_transition_c(data, D, tau)
+        L = bandt_pompe_transition_c(data, D, tau)
+    }
+    #buildTime = difftime(Sys.time(), buildTime, units='sec')
+    #cat('\tTIME TG_IN:',buildTime,'\n')
+
+    # filling the matrix with the counting of patterns
+    for(pattern in names(L))
+    {
+        M[names(L[[pattern]]),pattern] = L[[pattern]]
     }
 
-    # to convert the list of lists to matrix, via data.frame
-    M = as.matrix(as.data.frame(M))
+    #return(M)
 
+
+    # to convert the list of lists to matrix, via data.frame
+    #     buildTime = Sys.time()
+    #M = as.matrix(as.data.frame(M))
+    #     buildTime = difftime(Sys.time(), buildTime, units='sec')
+    #     cat('\tTIME AS.MATRIX:',buildTime,'\n')
+    #     print(dim(M))
+        
     # consider the amplitude as the weights
     if (amplitude == TRUE)
     {
@@ -76,6 +104,7 @@ bandt_pompe_transition = function(data, D=4, tau=1,
         }
     }
 
+    #buildTime = Sys.time()
     if (normalized == TRUE)
     {
         # similar to a markov chain probabilities
@@ -95,15 +124,13 @@ bandt_pompe_transition = function(data, D=4, tau=1,
             M = M/sum(M)
         }
     }
+    #buildTime = difftime(Sys.time(), buildTime, units='sec')
+    #cat('\tTIME NORM:',buildTime,'\n')
 
     if (vect == TRUE)
     {
         M = c(M)
     }
-    
-    # labeling the patterns
-    rownames(M) = perms_n
-    colnames(M) = perms_n
     
     return(M)
 }
