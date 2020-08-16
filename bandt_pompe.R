@@ -125,8 +125,11 @@ bandt_pompe = function(data, D=4, tau=1, by=1, equal=FALSE, amplitude=FALSE)
 #         repetitions of the same symbol
 # equal - if TRUE, it will compute equal sequences separately
 # useSymbols - if TRUE, the symbols were already computed, and passed as 'data'
+# na_aware - if TRUE, the symbols with only NAs will be counted separated
+# na_rm - if TRUE and na_aware=TRUE, the "NA patterns" are not counted
 bandt_pompe_distribution = function(data, D=4, tau=1, numred=FALSE, by=1, 
-                                    equal=FALSE, useSymbols=FALSE)
+                                    equal=FALSE, useSymbols=FALSE, 
+                                    na_aware=FALSE, na_rm=FALSE)
 {
     # check if the symbols were already computed
     if (useSymbols == TRUE)
@@ -142,9 +145,14 @@ bandt_pompe_distribution = function(data, D=4, tau=1, numred=FALSE, by=1,
         # the list of symbols from the BP transformation
         # NOTE: changing the main bandt-pompe function to its cpp version
         #symbols = bandt_pompe_c(data, D=D, tau=tau)
-        perms = bandt_pompe_distribution_c(data, D, tau)
+        perms = bandt_pompe_distribution_c(data, D, tau, na_aware)
     }
 
+    # not counting the "NA patterns"
+    if (na_aware == TRUE & na_rm == TRUE)
+    {
+        perms = perms[names(perms) != 'NA']
+    }
 
     # the names for the permutations
     perms_n = names(perms)

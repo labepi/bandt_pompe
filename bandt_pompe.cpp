@@ -94,6 +94,7 @@ String bandt_pompe_pattern_c(NumericVector x)
 //' @param x The time series (univariate vector)
 //' @param D The embedding dimension (size of sliding window)
 //' @param tau The embedding delay ('step' value)
+//' @param narm If true, do not count symbols if all elements in w are nan
 //
 // [[Rcpp::export]]
 StringVector bandt_pompe_c(NumericVector x, int D=3, int tau=1)
@@ -126,8 +127,8 @@ StringVector bandt_pompe_c(NumericVector x, int D=3, int tau=1)
             //Rprintf("%d ",i);
             w[j] = x[i];
             j++;
-        }
-        
+        }    
+
         //Rprintf("%d %f,%f,%f\n",s,w[0],w[1],w[2]);
 
         // copying the pattern to the symbol list
@@ -136,6 +137,76 @@ StringVector bandt_pompe_c(NumericVector x, int D=3, int tau=1)
 
     return symbols;
 }
+
+//' Bandt-Pompe transformation (na-removal)
+//'
+//' Do not count symbols if all elements in w are NAN.
+//'
+//' @param x The time series (univariate vector)
+//' @param D The embedding dimension (size of sliding window)
+//' @param tau The embedding delay ('step' value)
+//
+// [[Rcpp::export]]
+StringVector bandt_pompe_na_c(NumericVector x, int D=3, int tau=1)
+{
+    // aux
+    int i, j, s;
+
+    // the lenght of the vector
+    int n = x.size();
+
+    // the number of symbols
+    int sym_num = n-(D-1)*tau;
+
+    // to count or not symbols in case of narm=true
+    bool all_nan;
+
+    // the list of symbols to be returned
+    StringVector symbols(sym_num);
+
+    // the sliding window
+    NumericVector w(D);
+
+    // discovering the sequences of order n
+    for (s = 0; s < (n-(D-1)*tau); s++)
+    {
+        // getting the subsequence for the respective window
+        j = 0;
+        // 
+        all_nan = true;
+        for(i = s; i <= (s+(D-1)*tau); i+=tau)
+        {
+            //Rprintf("%d ",i);
+            w[j] = x[i];
+        
+            // any number of non-nan makes this symbols to bee count
+            if (isnan(w[j]) == false)
+            {
+                all_nan = false;
+                //Rprintf("%d isnan\n",s);
+            } 
+            
+            j++;
+        }
+
+        // do not count this symbol, set as NA
+        if (all_nan == true)
+        {
+            //Rprintf("%d is all nan\n",s);
+            symbols[s] = NA_STRING;
+        }
+        else
+        {
+            //Rprintf("%d %f,%f,%f\n",s,w[0],w[1],w[2]);
+
+            // copying the pattern to the symbol list
+            symbols[s] = bandt_pompe_pattern_c(w);
+        }
+    }
+
+    return symbols;
+}
+
 
 // Returns an empty list of symbols
 // 
@@ -184,13 +255,22 @@ std::map<std::string, int> bandt_pompe_empty_c(int D=3)
 //' @param tau The embedding delay ('step' value)
 // 
 // [[Rcpp::export]]
-std::map<std::string, int> bandt_pompe_distribution_c(NumericVector x, int D=3, int tau=1)
+std::map<std::string, int> 
+bandt_pompe_distribution_c(NumericVector x, int D=3, int tau=1, bool na_aware=false)
 {
     // create the empty permutations
     std::map<std::string, int> perms = bandt_pompe_empty_c(D);
     
     // computing the symbols
-    StringVector symbols = bandt_pompe_c(x, D, tau);
+    StringVector symbols;
+    if (na_aware == true)
+    {
+        symbols = bandt_pompe_na_c(x, D, tau);
+    }
+    else
+    {
+        symbols = bandt_pompe_c(x, D, tau);
+    }
 
     // counting the patterns 
     for(int i = 0; i < symbols.size(); i++)
