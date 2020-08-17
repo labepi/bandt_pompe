@@ -29,7 +29,8 @@ sourceCpp(paste(bandt_pompe_path,'bandt_pompe.cpp', sep='/'))
 # return an empty list of symbols
 # D - the embedding dimension
 # equal - if TRUE, it will compute equal sequences separately
-bandt_pompe_empty = function(D = 4, equal=FALSE)
+# na_aware - if TRUE, it will compute NA patterns separately
+bandt_pompe_empty = function(D = 4, equal=FALSE, na_aware=FALSE)
 {
     # to get the index of the permutation pi
     perms = sort(apply(permutations(D), 1, paste, collapse=''))
@@ -37,6 +38,11 @@ bandt_pompe_empty = function(D = 4, equal=FALSE)
     if (equal==TRUE)
     {
         perms = c(perms, paste(rep(0, D), collapse=''))
+    }
+    
+    if (na_aware==TRUE)
+    {
+        perms = c(perms, 'NA')
     }
 
     # the list of empty elements

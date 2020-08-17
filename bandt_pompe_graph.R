@@ -28,28 +28,28 @@
 # useSymbols - if True, the symbols were already computed, and passed as 'data'
 # amplitude: if TRUE, it computes the amplitude of each sliding window
 #           (largest difference between elements)
+# na_aware - if TRUE, the symbols with only NAs will be counted separated
+# na_rm - if TRUE and na_aware=TRUE, the "NA patterns" are not counted
 bandt_pompe_transition = function(data, D=4, tau=1, 
                                   normalized=TRUE, markov=FALSE,
                                   loop=TRUE, vect=FALSE, by=1,
                                   sthocastic=FALSE, 
                                   equal=FALSE, useSymbols=FALSE,
-                                  amplitude=FALSE)
+                                  amplitude=FALSE,
+                                  na_aware=FALSE, na_rm=FALSE)
 {
     # the number of permutations
     dfact = factorial(D)
 
     # plus 000 pattern
-    if(equal==TRUE)
+    if(equal==TRUE | na_aware==TRUE)
     {
         dfact = dfact+1
     }
     
     # to get the index of the permutation pi
-    #buildTime = Sys.time()
-    perms_n = names(bandt_pompe_empty(D, equal=equal))
-    #buildTime = difftime(Sys.time(), buildTime, units='sec')
-    #cat('\tTIME PERMS_N:',buildTime,'\n')
-    
+    perms_n = names(bandt_pompe_empty(D, equal=equal, na=na_aware))
+
     # the adjacency matrix
     M = matrix(0, ncol=dfact, nrow=dfact)
 
@@ -70,7 +70,7 @@ bandt_pompe_transition = function(data, D=4, tau=1,
     else
     {
         # computing symbols and counting transitions in Rcpp
-        L = bandt_pompe_transition_c(data, D, tau)
+        L = bandt_pompe_transition_c(data, D, tau, na_aware)
     }
     #buildTime = difftime(Sys.time(), buildTime, units='sec')
     #cat('\tTIME TG_IN:',buildTime,'\n')
@@ -81,16 +81,12 @@ bandt_pompe_transition = function(data, D=4, tau=1,
         M[names(L[[pattern]]),pattern] = L[[pattern]]
     }
 
-    #return(M)
-
-
-    # to convert the list of lists to matrix, via data.frame
-    #     buildTime = Sys.time()
-    #M = as.matrix(as.data.frame(M))
-    #     buildTime = difftime(Sys.time(), buildTime, units='sec')
-    #     cat('\tTIME AS.MATRIX:',buildTime,'\n')
-    #     print(dim(M))
-        
+    # not counting the "NA patterns"
+    if (na_aware == TRUE & na_rm == TRUE)
+    {
+        M = M[-dfact,-dfact]
+    }
+    
     # consider the amplitude as the weights
     if (amplitude == TRUE)
     {

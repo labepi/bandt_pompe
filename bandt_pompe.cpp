@@ -360,7 +360,7 @@ std::map<std::string, std::map<std::string, int>> bandt_pompe_empty_matrix_c(int
 //
 // [[Rcpp::export]]
 std::map<std::string, std::map<std::string, int>> 
-bandt_pompe_transition_c(NumericVector x, int D=3, int tau=1)
+bandt_pompe_transition_c(NumericVector x, int D=3, int tau=1, bool na_aware=false)
 {
     // the transition matrix
     // NOTE: the matrix initialization as removed, and this adjustment is made in R
@@ -368,7 +368,16 @@ bandt_pompe_transition_c(NumericVector x, int D=3, int tau=1)
     std::map<std::string, std::map<std::string, int>> M;
 
     // computing the symbols
-    StringVector symbols = bandt_pompe_c(x, D, tau);
+    StringVector symbols;
+    if (na_aware == true)
+    {
+        symbols = bandt_pompe_na_c(x, D, tau);
+    }
+    else
+    {
+        symbols = bandt_pompe_c(x, D, tau);
+    }
+    //StringVector symbols = bandt_pompe_c(x, D, tau);
 
     // counting the transitions
     for(int i = 1; i < symbols.size(); i++)
