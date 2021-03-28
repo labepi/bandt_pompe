@@ -1,7 +1,12 @@
-#include <Rcpp.h>
 #include <iostream>
 #include <algorithm>
 #include <map>
+
+// [[Rcpp::depends(RcppArmadillo)]]
+#include <RcppArmadillo.h> // includes Rcpp.h inside it
+//#include <Rcpp.h>
+#include <RcppArmadilloExtensions/sample.h>
+
 using namespace Rcpp;
 
 #include <chrono> 
@@ -68,9 +73,25 @@ NumericVector orderc(NumericVector x)
     return out;
 }
 
+//' Counting unique elements in the sliding window
+//'
+//' @param x The sliding window
+//' @return Returns the counting of unique elements
+//
+// [[Rcpp::export]]
+int countDistinct(NumericVector x)
+{
+    // NOTE: using clone to deep copy
+    NumericVector v = clone(x);
+    sort(v.begin(), v.end()); 
+    int count = std::distance(v.begin(), 
+                          std::unique(v.begin(), v.begin() + x.size()));
+    return count;
+}
+
 //' Compute a single pattern
 //'
-//' @param w The sliding window to be permutted
+//' @param x The sliding window to be permutted
 //' @return Returns the permutation pattern as a string
 //
 // [[Rcpp::export]]
@@ -89,12 +110,137 @@ String bandt_pompe_pattern_c(NumericVector x)
     return res;
 }
 
+//' Compute a single pattern (only if there are no ties)
+//'
+//' @param x The sliding window to be permutted
+//' @return Returns the permutation pattern as a string
+//
+// [[Rcpp::export]]
+String bandt_pompe_pattern_tie_c(NumericVector x, StringVector patterns, Nullable<NumericVector> prob=R_NilValue)
+{
+    int count = countDistinct(x);
+    //Rprintf("count: %d ", count);
+    
+    String res = "";
+    StringVector resv;
+
+    // tied values detected
+    if (count != x.size())
+    {
+        // if there is a probability distribution for the imputation
+        if (prob.isNotNull())
+        {
+            // sample a pattern according to prob
+            //res = RcppArmadillo::sample(patterns, 1, false, prob);
+            resv = sample(patterns, 1, false, prob);
+            res = resv[0];
+            return res;
+        }
+        else
+        {
+            return "NULL";
+            //return R_NilValue;
+        }
+    }
+
+    // get the order of x
+    NumericVector ord = orderc(x);
+
+    // converting to a string
+    for(int i = 0; i < x.size(); i++)
+    {
+        res += std::to_string((int)ord[i]);
+    }
+            
+    return res;
+}
+
+
+// Returns an empty list of symbols
+// 
+// The list is a map, to counting the patterns
+//
+// @param D The embedding dimension
+// 
+// [[Rcpp::export]]
+std::map<std::string, int> bandt_pompe_empty_c(int D=3)
+{
+    std::map<std::string, int> perms;
+
+    int i, itens[D];
+
+    // initializing the list of itens
+    for(i = 0; i < D; i++)
+    {
+        itens[i] = i+1;
+    }
+
+    String s;
+    
+    //auto start = high_resolution_clock::now(); 
+    
+    // create each permutation and initialize it with 0
+    do {
+        s = "";
+        for(i = 0; i < D; i++)
+        {
+            s += std::to_string(itens[i]);
+        }
+        perms[s] = 0;
+    } while ( std::next_permutation(itens,itens+D) );
+
+    //auto stop = high_resolution_clock::now(); 
+    //auto duration = duration_cast<microseconds>(stop - start); 
+    //Rcout << "\t\tTIME EMPTY: " << duration.count() << " seconds" << endl;
+
+    return perms;
+}
+
+// Returns the list of pattern symbols
+// 
+// The list is vector of strings
+//
+// @param D The embedding dimension
+// 
+// [[Rcpp::export]]
+StringVector bandt_pompe_perms_c(int D=3)
+{
+    StringVector perms;
+
+    int i, itens[D];
+
+    // initializing the list of itens
+    for(i = 0; i < D; i++)
+    {
+        itens[i] = i+1;
+    }
+
+    String s;
+    
+    //auto start = high_resolution_clock::now(); 
+    
+    // create each permutation and insert in the vector
+    do {
+        s = "";
+        for(i = 0; i < D; i++)
+        {
+            s += std::to_string(itens[i]);
+        }
+        perms.push_back(s);
+    } while ( std::next_permutation(itens,itens+D) );
+
+    //auto stop = high_resolution_clock::now(); 
+    //auto duration = duration_cast<microseconds>(stop - start); 
+    //Rcout << "\t\tTIME EMPTY: " << duration.count() << " seconds" << endl;
+
+    return perms;
+}
+
 //' Bandt-Pompe transformation
 //'
 //' @param x The time series (univariate vector)
 //' @param D The embedding dimension (size of sliding window)
 //' @param tau The embedding delay ('step' value)
-//' @param narm If true, do not count symbols if all elements in w are nan
 //
 // [[Rcpp::export]]
 StringVector bandt_pompe_c(NumericVector x, int D=3, int tau=1)
@@ -207,46 +353,69 @@ StringVector bandt_pompe_na_c(NumericVector x, int D=3, int tau=1)
     return symbols;
 }
 
-
-// Returns an empty list of symbols
-// 
-// The list is a map, to counting the patterns
+//' Bandt-Pompe transformation (with imputation of tied symbols)
+//'
+//' Do not count a symbol if it had tied values
+//'
+//' @param x The time series (univariate vector)
+//' @param D The embedding dimension (size of sliding window)
+//' @param tau The embedding delay ('step' value)
 //
-// @param D The embedding dimension
-// 
 // [[Rcpp::export]]
-std::map<std::string, int> bandt_pompe_empty_c(int D=3)
+StringVector bandt_pompe_tie_c(NumericVector x, int D=3, int tau=1, 
+        Nullable<NumericVector> prob=R_NilValue)
 {
-    std::map<std::string, int> perms;
+    // aux
+    int i, j, s;
 
-    int i, itens[D];
+    // the lenght of the vector
+    int n = x.size();
 
-    // initializing the list of itens
-    for(i = 0; i < D; i++)
+    // the number of symbols
+    int sym_num = n-(D-1)*tau;
+
+    //Rprintf("D,tau: %d %d\n",D,tau);
+    //Rprintf("symnum: %d\n",sym_num);
+    
+    // the list of symbols to be returned
+    //StringVector symbols(sym_num);
+    StringVector symbols(0);
+
+    // the sliding window
+    NumericVector w(D);
+
+    // to check a tied symbol
+    String tmp_symbol;
+
+    StringVector patterns = bandt_pompe_perms_c(D);
+
+    // discovering the sequences of order n
+    for (s = 0; s < (n-(D-1)*tau); s++)
     {
-        itens[i] = i+1;
+        // getting the subsequence for the respective window
+        j = 0;
+        for(i = s; i <= (s+(D-1)*tau); i+=tau)
+        {
+            //Rprintf("%d ",i);
+            w[j] = x[i];
+            j++;
+        }    
+
+        //Rprintf("%d %f,%f,%f\n",s,w[0],w[1],w[2]);
+
+        // checking the returned symbol
+        tmp_symbol = bandt_pompe_pattern_tie_c(w, patterns, prob);
+
+        // copying the pattern to the symbol list
+        if (tmp_symbol != "NULL")
+        {
+            symbols.push_back(tmp_symbol);
+        }
     }
 
-    String s;
-    
-    //auto start = high_resolution_clock::now(); 
-    
-    // create each permutation and initialize it with 0
-    do {
-        s = "";
-        for(i = 0; i < D; i++)
-        {
-            s += std::to_string(itens[i]);
-        }
-        perms[s] = 0;
-    } while ( std::next_permutation(itens,itens+D) );
-
-    //auto stop = high_resolution_clock::now(); 
-    //auto duration = duration_cast<microseconds>(stop - start); 
-    //Rcout << "\t\tTIME EMPTY: " << duration.count() << " seconds" << endl;
-
-    return perms;
+    return symbols;
 }
+
 
 //' Bandt-Pompe distribution
 //'
@@ -357,10 +526,11 @@ std::map<std::string, std::map<std::string, int>> bandt_pompe_empty_matrix_c(int
 //' data: the time series (univariate vector) or the pre-computed symbols
 //' D:    the embedding dimension (size of sliding window)
 //' tau:  the embedding delay ('step' value)
+//' hop:  the hop to consider for the consecutive pattern in transition
 //
 // [[Rcpp::export]]
 std::map<std::string, std::map<std::string, int>> 
-bandt_pompe_transition_c(NumericVector x, int D=3, int tau=1, bool na_aware=false)
+bandt_pompe_transition_c(NumericVector x, int D=3, int tau=1, bool na_aware=false, int hop=1)
 {
     // the transition matrix
     // NOTE: the matrix initialization as removed, and this adjustment is made in R
@@ -380,9 +550,9 @@ bandt_pompe_transition_c(NumericVector x, int D=3, int tau=1, bool na_aware=fals
     //StringVector symbols = bandt_pompe_c(x, D, tau);
 
     // counting the transitions
-    for(int i = 1; i < symbols.size(); i++)
+    for(int i = hop; i < symbols.size(); i++)
     {
-        ++M[(String)symbols[i-1]][(String)symbols[i]];
+        ++M[(String)symbols[i-hop]][(String)symbols[i]];
     }
 
     return M;
@@ -394,10 +564,11 @@ bandt_pompe_transition_c(NumericVector x, int D=3, int tau=1, bool na_aware=fals
 //' @symbols the pre-computed symbols
 //' @D    the embedding dimension (size of sliding window)
 //' @tau  the embedding delay ('step' value)
+//' hop:  the hop to consider for the consecutive pattern in transition
 //
 // [[Rcpp::export]]
 std::map<std::string, std::map<std::string, int>> 
-bandt_pompe_transition_symbols_c(StringVector symbols, int D=3, int tau=1)
+bandt_pompe_transition_symbols_c(StringVector symbols, int D=3, int tau=1, int hop=1)
 {
     //auto start = high_resolution_clock::now(); 
     
@@ -413,9 +584,12 @@ bandt_pompe_transition_symbols_c(StringVector symbols, int D=3, int tau=1)
     //auto start2 = high_resolution_clock::now(); 
     //
     // counting the transitions
-    for(int i = 1; i < symbols.size(); i++)
+    // TODO: check if the incremment must also be with hop
+    //Rcout << "\t\thop: " << hop << endl;
+    //for(int i = hop; i < symbols.size(); i+=hop)
+    for(int i = hop; i < symbols.size(); i++)
     {
-        ++M[(String)symbols[i-1]][(String)symbols[i]];
+        ++M[(String)symbols[i-hop]][(String)symbols[i]];
     }
 
     //auto stop2 = high_resolution_clock::now(); 

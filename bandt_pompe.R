@@ -74,6 +74,7 @@ bandt_pompe_pattern = function(w, equal=FALSE)
 }
 
 # Bandt-Pompe transformation
+# TODO: make this function calls its Cpp version
 #
 # data: the time series (univariate vector)
 # D:    the embedding dimension (size of sliding window)
@@ -93,7 +94,7 @@ bandt_pompe = function(data, D=4, tau=1, by=1, equal=FALSE, amplitude=FALSE)
     # (sliding window)
     amps = c()
     
-    # dicovering the sequences of order n
+    # discovering the sequences of order n
     for (s in seq(1, length(data)-(D-1)*tau, by=by))
     {
         # the indices for the subsequence
@@ -171,7 +172,9 @@ bandt_pompe_distribution = function(data, D=4, tau=1, numred=FALSE, by=1,
 }
 
 
-# Bandt-Pompe distribution
+
+
+# Bandt-Pompe distribution (old version in R)
 #
 # Parameters:
 # data: the time series (univariate vector) or the pre-computed symbols
@@ -240,4 +243,34 @@ bandt_pompe_distribution2 = function(data, D=4, tau=1, numred=FALSE, by=1,
     return(output)
 }
 
+# Bandt-Pompe transformation
+# TODO: make this function calls its Cpp version
+#
+# data: the time series (univariate vector)
+# D:    the embedding dimension (size of sliding window)
+# tau:  the embedding delay ('step' value)
+# equal: if TRUE, it will compute equal sequences separately
+# amplitude: if TRUE, it computes the amplitude of each sliding window
+#           (largest difference between elements)
+#
+# return: The list of symbols from the transformed dataset,
+#         the list of differences (if diff is TRUE)
+bandt_pompe_tie = function(data, D=4, tau=1)
+{
+    # compute the symbols, removing the tied patterns
+    symbols = bandt_pompe_tie_c(data, D, tau, NULL)
+
+    # compute the probability distribution of patterns from these symbols
+    bpd = bandt_pompe_distribution_symbols_c(symbols, 3, 1)
+
+    # normalize distribution
+    probs = bpd/sum(bpd)
+
+    # compute the symbols, imputing tied patterns with the a priori
+    # distribution of patterns without the tied patterns
+    symbols = bandt_pompe_tie_c(data, D, tau, prob=probs)
+
+
+    return(symbols)
+}
 

@@ -30,13 +30,14 @@
 #           (largest difference between elements)
 # na_aware - if TRUE, the symbols with only NAs will be counted separated
 # na_rm - if TRUE and na_aware=TRUE, the "NA patterns" are not counted
+# hop - the hop to consider for the consecutive pattern in transition        
 bandt_pompe_transition = function(data, D=4, tau=1, 
                                   normalized=TRUE, markov=FALSE,
                                   loop=TRUE, vect=FALSE, by=1,
                                   sthocastic=FALSE, 
                                   equal=FALSE, useSymbols=FALSE,
                                   amplitude=FALSE,
-                                  na_aware=FALSE, na_rm=FALSE)
+                                  na_aware=FALSE, na_rm=FALSE, hop=1)
 {
     # the number of permutations
     dfact = factorial(D)
@@ -65,7 +66,7 @@ bandt_pompe_transition = function(data, D=4, tau=1,
     {
         # symbols were passed as data
         # counting transitions in Rcpp
-        L = bandt_pompe_transition_symbols_c(data, D, tau)
+        L = bandt_pompe_transition_symbols_c(data, D, tau, hop)
     }
     else
     {
