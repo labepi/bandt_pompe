@@ -119,39 +119,40 @@ pst_trace = function(x, D=3, tau=1)
 }
 
 
-
-# Ideas
-
-
-# test of a modification in the C_JS function altering Pe to be another
-# distribution
-complexity_distance = function(x, y, D=4, tau=1)
+# The permutation Jensen-Shannon distance
+pjsd = function(x, y=NULL, D=4, tau=1, probs=FALSE, normalized=FALSE)
 {
-    # computing the B-P distribution
-    xp = bandt_pompe_distribution(x, D, tau)
-    yp = bandt_pompe_distribution(y, D, tau)
+    # if the permutation entropy distribution is also given
+    if (probs == FALSE) {
+        # computing the B-P distribution
+        xp = bandt_pompe_distribution(x, D, tau)
+    }
 
-
-    # the length of the probabilities, 
-    N = length(yp$probabilities)
+    # uniform distribution is assumed for y
+    if (is.null(y)) {
+        # the length of the probabilities, 
+        #N = length(xp$probabilities)
+        N = factorial(D)
+        
+        yp = data.frame(probabilities = rep(1/N, N))
+    } else {
+        if (probs == FALSE) {
+            yp = bandt_pompe_distribution(y, D, tau)
+        }
+    }
 
     # the Jensen-shannon divergence
-    JS = shannon_entropy( (xp$probabilities + yp$probabilities) / 2  ) 
-            - 
-          shannon_entropy(xp$probabilities)/2
-            -
-          shannon_entropy(yp$probabilities)/2
+    JS = shannon_entropy( (xp$probabilities + yp$probabilities) / 2 ) - 
+            shannon_entropy(xp$probabilities)/2 - shannon_entropy(yp$probabilities)/2
 
-    # the statistical complexity
-    #aux = (   ((N+1)/N) * log(N + 1) - 2*log(2*N) + log(N)   )
-    #Q_0 = -2*(1/aux)
-    #Q = Q_0 * JS
-    #complexity = Q*entropy
+    if (normalized == TRUE)
+        return(sqrt(JS)/sqrt(log(2)))
     
-    print(JS)
-    #print(complexity)
+    return(sqrt(JS))
 }
 
+
+# Ideas
 
 
 # returns a probability distribution that extremizes C for a fixed H
@@ -186,6 +187,12 @@ JSDiv = function(p, q)
     #JS = shannon_entropy( (xp$probabilities + yp$probabilities) / 2  ) 
     #    - shannon_entropy(xp$probabilities)/2
     #    - shannon_entropy(yp$probabilities)/2
+    
+    # the statistical complexity
+    #aux = (   ((N+1)/N) * log(N + 1) - 2*log(2*N) + log(N)   )
+    #Q_0 = -2*(1/aux)
+    #Q = Q_0 * JS
+    #complexity = Q*entropy
 
     m = 0.5 * (p + q)
     JS = 0.5 * (sum(p * log2(p / m)) + sum(q * log2(q / m)))
