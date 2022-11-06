@@ -174,7 +174,8 @@ extremizes = function(p, N, m, n)
 
 # computes the Jensen-Shannon divergence between two distributions
 # - distributions must follow the BPD format
-JSDiv = function(p, q)
+#JSDiv = function(p, q)
+JSdiv = function(x, y=NULL, D=4, tau=1, probs=FALSE, wx=0.5, wy=0.5)
 {
     # computing the B-P distribution
     #xp = bandt_pompe_distribution(x, D, tau)
@@ -194,16 +195,47 @@ JSDiv = function(p, q)
     #Q = Q_0 * JS
     #complexity = Q*entropy
 
-    m = 0.5 * (p + q)
-    JS = 0.5 * (sum(p * log2(p / m)) + sum(q * log2(q / m)))
+    # m = 0.5 * (p + q)
+    # JS = 0.5 * (sum(p * log2(p / m)) + sum(q * log2(q / m)))
 
-    # the distance
-    # The square root of the Jensen–Shannon divergence is a metric often
-        # referred to as Jensen-Shannon distance (wikipedia).
-    attr(JS, 'd') = sqrt(JS)
+    # # the distance
+    # # The square root of the Jensen–Shannon divergence is a metric often
+    #     # referred to as Jensen-Shannon distance (wikipedia).
+    # attr(JS, 'd') = sqrt(JS)
+
+    # return(JS)
+
+    # if the permutation entropy distribution is also given
+    if (probs == FALSE) {
+        # computing the B-P distribution
+        xp = bandt_pompe_distribution(x, D, tau)
+    }
+
+    # uniform distribution is assumed for y
+    if (is.null(y)) {
+        # the length of the probabilities, 
+        #N = length(xp$probabilities)
+        N = factorial(D)
+        
+        yp = data.frame(probabilities = rep(1/N, N))
+    } else {
+        if (probs == FALSE) {
+            yp = bandt_pompe_distribution(y, D, tau)
+        }
+    }
+
+    # the Jensen-shannon divergence
+    #JS = shannon_entropy( (xp$probabilities + yp$probabilities) / 2 ) - 
+    #        shannon_entropy(xp$probabilities)/2 - shannon_entropy(yp$probabilities)/2
+    
+    # the Jensen-shannon divergence for different length time series
+    #wx = 0.5 # weight for x
+    #wy = 0.5 # weight for y
+    JS = shannon_entropy( wx * xp$probabilities + wy * yp$probabilities ) - 
+            wx * shannon_entropy(xp$probabilities) - 
+            wy * shannon_entropy(yp$probabilities)
 
     return(JS)
-
 }
 
 
