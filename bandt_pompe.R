@@ -4,7 +4,8 @@
 
 # required packages
 
-suppressMessages(library(igraph))
+# NOTE: moved to bandt_pompe_graph.R
+# suppressMessages(library(igraph))
 
 require(e1071, quietly=TRUE)
 

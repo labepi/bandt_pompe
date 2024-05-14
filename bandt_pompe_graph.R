@@ -8,6 +8,8 @@
 ## Rcpp implementation of bandt-pompe functions
 #sourceCpp(paste(bandt_pompe_path,'bandt_pompe_graph.cpp', sep='/'))
 
+suppressMessages(library(igraph))
+
 ############################
 # transition graph functions
 ############################
