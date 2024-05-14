@@ -9,7 +9,7 @@
 
 require(e1071, quietly=TRUE)
 
-suppressMessages(library(entropy))
+# suppressMessages(library(entropy))
 
 library(Rcpp)
 
