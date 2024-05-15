@@ -145,8 +145,8 @@ pjsd = function(x, y=NULL, D=4, tau=1, probs=FALSE, normalized=FALSE)
     }
 
     # the Jensen-shannon divergence
-    JS = shannon_entropy( (xp$probabilities + yp$probabilities) / 2 ) - 
-            shannon_entropy(xp$probabilities)/2 - shannon_entropy(yp$probabilities)/2
+    JS = shannon_entropy( (xp + yp) / 2 ) - 
+            shannon_entropy(xp)/2 - shannon_entropy(yp)/2
 
     if (normalized == TRUE)
         return(sqrt(JS)/sqrt(log(2)))
